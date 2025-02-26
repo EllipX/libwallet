@@ -173,3 +173,17 @@ Web3/Connection manages which sites have access to which accounts
 * `POST Request/<id>:approve`
   * Must pass Accounts as an array of account IDs if the request Type is connect
 * `POST Request/<id>:reject`
+
+## Token (ERC20)
+
+* `GET Token`
+* `GET Token/id`
+* `POST Contact`
+  * Network => network Id
+  * Type => ethereum || bitcoin
+  * Address
+  * Name
+  * Symbol
+  * Decimals
+  * TotalSupply
+* `DELETE Token/id`
