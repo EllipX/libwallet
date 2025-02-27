@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"git.atonline.com/ellipx/libwallet/wlttoken"
 	"fmt"
 	"net"
 	"os"
@@ -234,7 +233,6 @@ func (e *env) initTemp() error {
 	wltwallet.InitEnv(e)
 	wltcontact.InitEnv(e)
 	wltnft.InitEnv(e)
-	wlttoken.InitEnv(e)
 	wltcrash.InitEnv(e)
 
 	return nil

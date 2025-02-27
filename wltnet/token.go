@@ -1,4 +1,4 @@
-package wlttoken
+package wltnet
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"git.atonline.com/ellipx/libwallet/wltintf"
-	"git.atonline.com/ellipx/libwallet/wltnet"
 	"github.com/KarpelesLab/apirouter"
 	"github.com/KarpelesLab/pobj"
 	"github.com/KarpelesLab/xuid"
@@ -40,10 +39,6 @@ func init() {
 		},
 	)
 	pobj.RegisterStatic("Token:discoverToken", apiDiscoverToken)
-}
-
-func InitEnv(e wltintf.Env) {
-	e.AutoMigrate(&Token{})
 }
 
 func (t *Token) save(e wltintf.Env) error {
@@ -96,11 +91,11 @@ func apiDiscoverToken(ctx context.Context) (any, error) {
 		return nil, errors.New("failed to get env")
 	}
 
-	n := apirouter.GetObject[wltnet.Network](ctx, "Network")
+	n := apirouter.GetObject[Network](ctx, "Network")
 	if n == nil {
 		// if no network passed, take current net
 		var err error
-		n, err = wltnet.CurrentNetwork(e)
+		n, err = CurrentNetwork(e)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +120,7 @@ func apiCreateToken(ctx *apirouter.Context, t *Token) (any, error) {
 	}
 
 	if t.Network == nil {
-		n, err := wltnet.CurrentNetwork(e)
+		n, err := CurrentNetwork(e)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +144,7 @@ func apiCreateToken(ctx *apirouter.Context, t *Token) (any, error) {
 	return t, nil
 }
 
-func DiscoverToken(n *wltnet.Network, address string) (any, error) {
+func DiscoverToken(n *Network, address string) (any, error) {
 	// ERC20 function selectors.
 	selectors := map[string]string{
 		"name":        "0x06fdde03",
@@ -218,15 +213,12 @@ func DiscoverToken(n *wltnet.Network, address string) (any, error) {
 	return token, nil
 }
 
-func doEthCallAndDecodeString(n *wltnet.Network, param map[string]string) (string, error) {
+func doEthCallAndDecodeString(n *Network, param map[string]string) (string, error) {
 	hexStr, err := ethrpc.ReadString(n.DoRPC("eth_call", param, "latest"))
 	if err != nil {
 		fmt.Printf("error RPC %v", err)
 		return "", err
 	}
-
-	fmt.Println(hexStr)
-	fmt.Println(len(hexStr))
 	if strings.HasPrefix(hexStr, "0x") {
 		hexStr = hexStr[2:]
 	}
@@ -240,7 +232,6 @@ func doEthCallAndDecodeString(n *wltnet.Network, param map[string]string) (strin
 	if err != nil {
 		return "", fmt.Errorf("failed to decode hex string: %w", err)
 	}
-	fmt.Println(string(buf))
 	ln := new(big.Int).SetBytes(buf[32:64]).Int64()
 	if len(buf) < 64+int(ln) {
 		return "", fmt.Errorf("buffer too small")
@@ -248,7 +239,7 @@ func doEthCallAndDecodeString(n *wltnet.Network, param map[string]string) (strin
 	return string(buf[64 : 64+ln]), nil
 }
 
-func doEthCallUint256AndDecodeString(n *wltnet.Network, param map[string]string) (string, error) {
+func doEthCallUint256AndDecodeString(n *Network, param map[string]string) (string, error) {
 	num, err := ethrpc.ReadBigInt(n.DoRPC("eth_call", param, "latest"))
 	if err != nil {
 		fmt.Printf("error RPC %v", err)
