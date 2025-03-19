@@ -278,3 +278,29 @@ func (t *Token) ApiDelete(ctx *apirouter.Context) error {
 
 	return e.Delete(t)
 }
+
+func (t *Token) BalanceOf(n *Network, a AddressProvider) (string, error) {
+	hexAccountAddress := fmt.Sprintf("%064x", a.GetAddress())
+	params := map[string]string{
+		"to":   t.Address,
+		"data": "0x70a08231" + hexAccountAddress,
+	}
+
+	balance, err := doEthCallUint256AndDecodeString(n, params)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(balance)
+	return balance, nil
+}
+
+func TokensByNetworkAndAddress(e wltintf.Env, n *Network) ([]*Token, error) {
+	if n == nil {
+		return nil, fmt.Errorf("missing network")
+	}
+
+	var tokens []*Token
+	e.Find(&tokens, map[string]any{"Network": n.Id})
+	return tokens, nil
+}

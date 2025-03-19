@@ -59,6 +59,12 @@ func apiListAsset(ctx *apirouter.Context) (any, error) {
 	}
 	assets = append(assets, nat)
 
+	tokens, err := n.TokenAssets(e, acct)
+	if err != nil {
+		return nil, err
+	}
+	assets = append(assets, tokens...)
+
 	if convert, okconv := apirouter.GetParam[string](ctx, "_convert"); okconv {
 		for _, a := range assets {
 			a.ConvertTo(e, convert)

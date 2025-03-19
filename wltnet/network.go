@@ -434,3 +434,40 @@ func (n *Network) Nfts(e wltintf.Env, acct AddressProvider) (*[]wltnft.Nft, erro
 		return nil, fmt.Errorf("unsupporte type %s", n.Type)
 	}
 }
+
+func (n *Network) TokenAssets(e wltintf.Env, acct AddressProvider) ([]*wltasset.Asset, error) {
+	tokens, err := TokensByNetworkAndAddress(e, n)
+	if err != nil {
+		return nil, err
+	}
+
+	var assets []*wltasset.Asset
+	for _, t := range tokens {
+		balance, err := t.BalanceOf(n, acct)
+		if err != nil {
+			fmt.Println("error getting balance:", err)
+			continue
+		}
+		intDecimals, err := strconv.Atoi(t.Decimals)
+		if err != nil {
+			fmt.Println("error converting string to int for decimals :", err)
+			continue
+		}
+
+		amount, err := ellipxobj.NewAmountFromString(balance, intDecimals)
+		if err != nil {
+			fmt.Println("error creating Amount from balance :", err)
+			continue
+		}
+		assets = append(assets, &wltasset.Asset{
+			Key:     n.String() + t.Address,
+			Name:    t.Name,
+			Symbol:  t.Symbol,
+			Amount:  amount,
+			Network: n.Id,
+			Type:    "fungible",
+			TestNet: n.TestNet,
+		})
+	}
+	return assets, nil
+}

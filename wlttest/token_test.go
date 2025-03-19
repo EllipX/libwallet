@@ -27,7 +27,22 @@ func TestDiscoverToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error DiscoverToken SEI: %v", err)
 	}
-	fmt.Println(token)
+}
 
-	fmt.Println("SUCCESSSSSS")
+func TestTokenBalance(t *testing.T) {
+	n := getTestNetwork()
+	a := &MockAddressProvider{
+		MockAddress: "0x17Ab1f88C4C90E5A5290cFb8550CDa1279E84531",
+	}
+	token := wltnet.Token{
+		// USDT
+		Address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
+	}
+
+	balance, err := token.BalanceOf(n, a)
+	if err != nil {
+		t.Fatalf("Error GetBalance: %v", err)
+	}
+
+	println(balance)
 }

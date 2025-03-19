@@ -3,37 +3,10 @@ package wlttest
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/EllipX/libwallet/wltbase"
 	"github.com/EllipX/libwallet/wltintf"
-	"github.com/EllipX/libwallet/wltnet"
 )
-
-func getNetwork() *wltnet.Network {
-	return &wltnet.Network{
-		Id:               nil,
-		Type:             "evm",
-		ChainId:          "1",
-		Name:             "Ethereum Mainnet",
-		RPC:              "",
-		CurrencySymbol:   "ETH",
-		CurrencyDecimals: 0,
-		BlockExplorer:    "",
-		TestNet:          false,
-		Priority:         0,
-		Created:          time.Now(),
-		Updated:          time.Now(),
-	}
-}
-
-type MockAddressProvider struct {
-	MockAddress string
-}
-
-func (m *MockAddressProvider) GetAddress() string {
-	return m.MockAddress
-}
 
 func TestNftMetadata(t *testing.T) {
 	v, err := wltbase.InitEnv("test")
@@ -47,7 +20,7 @@ func TestNftMetadata(t *testing.T) {
 		return
 	}
 
-	network := getNetwork()
+	network := getTestNetwork()
 
 	// this address uses HTTP token URI
 	_, err = network.NftMetadata(env, "0x3E34ff1790BF0a13EfD7d77e75870Cb525687338", "1")
