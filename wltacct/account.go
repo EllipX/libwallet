@@ -180,6 +180,7 @@ func (a *Account) init(wallet *wltwallet.Wallet) error {
 		return err
 	}
 	a.Address = addr
+	a.URI = "ethereum:" + a.Address
 	return nil
 }
 
