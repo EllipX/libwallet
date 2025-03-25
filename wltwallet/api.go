@@ -84,7 +84,14 @@ func GetAllWallets(e wltintf.Env, ctx *apirouter.Context) ([]*Wallet, error) {
 }
 
 func HasWallet(e wltintf.Env) bool {
-	return e.Count(&Wallet{}) > 0
+	// Use CountWithError to properly handle database errors
+	count, err := e.CountWithError(&Wallet{})
+	if err != nil {
+		// Log the error but return false as if no wallets exist
+		fmt.Printf("Error counting wallets: %v\n", err)
+		return false
+	}
+	return count > 0
 }
 
 func FirstWallet(e wltintf.Env) (w *Wallet, err error) {

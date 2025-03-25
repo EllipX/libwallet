@@ -57,7 +57,14 @@ func CreateAccount(e wltintf.Env, wallet *wltwallet.Wallet, name, typ string, in
 }
 
 func HasAccount(e wltintf.Env) bool {
-	return e.Count(&Account{}) > 0
+	// Use CountWithError to properly handle database errors
+	count, err := e.CountWithError(&Account{})
+	if err != nil {
+		// Log the error but return false as if no accounts exist
+		fmt.Printf("Error counting accounts: %v\n", err)
+		return false
+	}
+	return count > 0
 }
 
 func FirstAccount(e wltintf.Env) (a *Account, err error) {
