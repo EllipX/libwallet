@@ -3,6 +3,7 @@ package wltwallet
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/EllipX/libwallet/wltintf"
@@ -88,7 +89,7 @@ func HasWallet(e wltintf.Env) bool {
 	count, err := e.CountWithError(&Wallet{})
 	if err != nil {
 		// Log the error but return false as if no wallets exist
-		fmt.Printf("Error counting wallets: %v\n", err)
+		log.Printf("Error counting wallets: %v", err)
 		return false
 	}
 	return count > 0

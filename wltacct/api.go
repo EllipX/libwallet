@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"time"
 
 	"github.com/EllipX/libwallet/wltintf"
@@ -61,7 +62,7 @@ func HasAccount(e wltintf.Env) bool {
 	count, err := e.CountWithError(&Account{})
 	if err != nil {
 		// Log the error but return false as if no accounts exist
-		fmt.Printf("Error counting accounts: %v\n", err)
+		log.Printf("Error counting accounts: %v", err)
 		return false
 	}
 	return count > 0
