@@ -2,6 +2,7 @@ package wltbase
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/EllipX/libwallet/wltacct"
@@ -79,7 +80,12 @@ func apiFetchWeb3Connection(ctx *apirouter.Context, in struct{ Id string }) (any
 	if err != nil {
 		return nil, err
 	}
-	c.AccountInfo, _ = wltacct.AccountById(e, c.Account)
+
+	var accErr error
+	c.AccountInfo, accErr = wltacct.AccountById(e, c.Account)
+	if accErr != nil {
+		log.Printf("failed to get account %s: %v", c.Account, accErr)
+	}
 
 	return c, nil
 }
@@ -105,7 +111,11 @@ func apiListWeb3Connection(ctx *apirouter.Context) (any, error) {
 	}
 
 	for _, c := range res {
-		c.AccountInfo, _ = wltacct.AccountById(e, c.Account)
+		var err error
+		c.AccountInfo, err = wltacct.AccountById(e, c.Account)
+		if err != nil {
+			log.Printf("failed to get account %s: %v", c.Account, err)
+		}
 	}
 	return res, nil
 }

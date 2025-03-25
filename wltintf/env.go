@@ -32,6 +32,7 @@ type Env interface {
 	Find(res any, where map[string]any) error
 	ListHelper(ctx context.Context, target any, sort string, searchKey ...string) error
 	Count(obj any) int64
+	CountWithError(obj any) (int64, error)
 }
 
 func GetEnv(ctx context.Context) Env {

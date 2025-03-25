@@ -179,6 +179,9 @@ func (w *Wallet) initializeWallet(ctx context.Context, kDesc []*wltsign.KeyDescr
 			err := party.Start()
 			if err != nil {
 				log.Printf("err = %s", err)
+				// Ensure we don't block on channel read if party failed to start
+				p.sdata = nil
+				return
 			}
 			p.sdata = <-endCh
 		}(p)
@@ -316,6 +319,7 @@ func (w *Wallet) subSign(rand io.Reader, digest []byte, opts crypto.SignerOpts) 
 			if err != nil {
 				log.Printf("err = %s", err)
 				res <- err
+				return // Return early to prevent blocking on endCh
 			}
 			sig := <-endCh
 			res <- sig.GetSignatureObject().Serialize()

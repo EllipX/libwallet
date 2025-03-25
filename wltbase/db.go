@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
@@ -88,9 +89,10 @@ func (e *env) dbDeleteBucket(bucket []byte) error {
 // dbSimpleIsBucketEmpty checks if a bucket in BoltDB is empty
 // Returns true if the bucket doesn't exist or has no keys
 // Returns false if the bucket contains at least one key
-func (e *env) dbSimpleIsBucketEmpty(bucket []byte) bool {
+// Returns error if the database operation fails
+func (e *env) dbSimpleIsBucketEmpty(bucket []byte) (bool, error) {
 	res := true
-	e.db.View(func(tx *bolt.Tx) error {
+	err := e.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
 		if b == nil {
 			return nil
@@ -102,7 +104,10 @@ func (e *env) dbSimpleIsBucketEmpty(bucket []byte) bool {
 		}
 		return nil
 	})
-	return res
+	if err != nil {
+		return false, fmt.Errorf("failed to check if bucket %x is empty: %w", bucket, err)
+	}
+	return res, nil
 }
 
 // FirstId retrieves the first record with the given ID and populates the result
@@ -136,10 +141,29 @@ func (e *env) FirstWhere(res any, where map[string]any) error {
 
 // Count returns the number of records for a given model type
 // Uses the provided object to determine the table
+// Note: This method ignores errors to match the interface requirement
+// TODO: Consider updating the interface to handle errors
 func (e *env) Count(obj any) int64 {
 	var count int64
-	e.sql.Model(obj).Count(&count)
+	result := e.sql.Model(obj).Count(&count)
+	if result.Error != nil {
+		// Log the error but continue with count=0 to maintain interface compatibility
+		log.Printf("failed to count records of type %T: %v", obj, result.Error)
+		return 0
+	}
 	return count
+}
+
+// CountWithError returns the number of records for a given model type
+// Uses the provided object to determine the table
+// Returns the count and any error encountered during the query
+func (e *env) CountWithError(obj any) (int64, error) {
+	var count int64
+	result := e.sql.Model(obj).Count(&count)
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to count records of type %T: %w", obj, result.Error)
+	}
+	return count, nil
 }
 
 // Delete removes a record from the database

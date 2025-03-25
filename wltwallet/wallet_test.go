@@ -12,6 +12,7 @@ import (
 	"github.com/ModChain/secp256k1"
 )
 
+// testPhone is a known invalid phone number but just valid enough so it can be input in a phone number input field
 const testPhone = "+14045551234" // code=000000
 
 func TestWalletCreate(t *testing.T) {
