@@ -40,24 +40,26 @@ type Wallet struct {
 }
 
 // save persists the wallet and all its keys to the database
-// Returns any error encountered during the operation
+// Returns error with context if the save operation fails
 func (w *Wallet) save(e wltintf.Env) error {
-	for _, wk := range w.Keys {
-		err := wk.save(e)
-		if err != nil {
-			return err
+	for i, wk := range w.Keys {
+		if err := wk.save(e); err != nil {
+			return fmt.Errorf("failed to save wallet key %d: %w", i, err)
 		}
 	}
-	return e.Save(w)
+	if err := e.Save(w); err != nil {
+		return fmt.Errorf("failed to save wallet %s: %w", w.Id, err)
+	}
+	return nil
 }
 
 // ApiUpdate handles API requests to update wallet properties
 // Currently supports updating the wallet name
-// Returns nil if no updates were made or any error encountered during saving
+// Returns nil if no updates were made or error with context if the save fails
 func (w *Wallet) ApiUpdate(ctx *apirouter.Context) error {
 	e := wltintf.GetEnv(ctx)
 	if e == nil {
-		return errors.New("failed to get env")
+		return fmt.Errorf("failed to get environment from context for wallet %s", w.Id)
 	}
 
 	updated := false
@@ -70,24 +72,32 @@ func (w *Wallet) ApiUpdate(ctx *apirouter.Context) error {
 		return nil
 	}
 	w.Modified = time.Now()
-	return w.save(e)
+	if err := w.save(e); err != nil {
+		return fmt.Errorf("failed to save wallet updates: %w", err)
+	}
+	return nil
 }
 
 // ApiDelete handles API requests to delete a wallet
 // Emits a "wallet:deleted" event and removes the wallet and its keys from the database
-// Returns any error encountered during the deletion
+// Returns error with context if the deletion fails
 func (w *Wallet) ApiDelete(ctx *apirouter.Context) error {
 	e := wltintf.GetEnv(ctx)
 	if e == nil {
-		return errors.New("failed to get env")
+		return fmt.Errorf("failed to get environment from context for wallet %s", w.Id)
 	}
 
 	e.Emitter().Emit(ctx, "wallet:deleted", w.Id.String())
 
 	// delete Wallet/Key entries
-	e.DeleteWhere(&WalletKey{}, map[string]any{"Wallet": w.Id.String()})
-	//e.sql.Where(map[string]any{"Wallet": w.Id.String()}).Delete(&WalletKey{})
-	return e.Delete(w)
+	if err := e.DeleteWhere(&WalletKey{}, map[string]any{"Wallet": w.Id.String()}); err != nil {
+		return fmt.Errorf("failed to delete wallet keys for wallet %s: %w", w.Id, err)
+	}
+
+	if err := e.Delete(w); err != nil {
+		return fmt.Errorf("failed to delete wallet %s: %w", w.Id, err)
+	}
+	return nil
 }
 
 // initializeWallet creates a new wallet with the specified key descriptions
@@ -127,7 +137,7 @@ func (w *Wallet) initializeWallet(ctx context.Context, kDesc []*wltsign.KeyDescr
 
 		k, err := w.createWalletKey(ctx, kInfo.Type)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create wallet key of type %s (key %d/%d): %w", kInfo.Type, i+1, nk, err)
 		}
 		w.Keys[i] = k
 	}
@@ -179,7 +189,7 @@ func (w *Wallet) initializeWallet(ctx context.Context, kDesc []*wltsign.KeyDescr
 	chaincode := make([]byte, 32)
 	_, err := io.ReadFull(rand.Reader, chaincode)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to generate secure chaincode for wallet: %w", err)
 	}
 
 	// Wait for all key generation to complete
@@ -195,7 +205,7 @@ func (w *Wallet) initializeWallet(ctx context.Context, kDesc []*wltsign.KeyDescr
 	for i, kInfo := range kDesc {
 		err = w.Keys[i].encrypt(kInfo)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to encrypt wallet key %d/%d of type %s: %w", i+1, len(w.Keys), kInfo.Type, err)
 		}
 	}
 
@@ -294,7 +304,7 @@ func (w *Wallet) subSign(rand io.Reader, digest []byte, opts crypto.SignerOpts) 
 		params := tss.NewParameters(curve, tssctx, idmap[n], len(keys), w.Threshold)
 		sdata, err := p.decrypt(kd, keySignPurpose)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to decrypt key %s for signing: %w", kd.Id, err)
 		}
 		party := signing.NewLocalPartyWithAutoKDD(msg, params, *sdata, aopt.IL, outCh, endCh, len(digest))
 		m[p.Id.String()] = party

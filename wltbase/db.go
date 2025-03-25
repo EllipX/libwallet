@@ -13,6 +13,7 @@ import (
 // DBSimpleGet retrieves a value from the BoltDB key-value store
 // Returns the value associated with the given key in the specified bucket
 // If the bucket or key doesn't exist, returns fs.ErrNotExist
+// Returns error with context if the operation fails for other reasons
 func (e *env) DBSimpleGet(bucket, key []byte) (r []byte, err error) {
 	err = e.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
@@ -27,46 +28,61 @@ func (e *env) DBSimpleGet(bucket, key []byte) (r []byte, err error) {
 		copy(r, v)
 		return nil
 	})
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, fmt.Errorf("failed to get key %x from bucket %x: %w", key, bucket, err)
+	}
 	return
 }
 
 // DBSimpleDel deletes one or more keys from a bucket in the BoltDB key-value store
 // If the bucket doesn't exist, the operation is considered successful
-// Returns any error encountered during deletion
+// Returns error with context if deletion fails
 func (e *env) DBSimpleDel(bucket []byte, keys ...[]byte) error {
-	return e.db.Update(func(tx *bolt.Tx) error {
+	err := e.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
 		if b == nil {
 			return nil
 		}
 		for _, key := range keys {
 			if err := b.Delete(key); err != nil {
-				return err
+				return fmt.Errorf("failed to delete key %x: %w", key, err)
 			}
 		}
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("failed to delete keys from bucket %x: %w", bucket, err)
+	}
+	return nil
 }
 
 // DBSimpleSet stores a key-value pair in the BoltDB key-value store
 // Creates the bucket if it doesn't exist
-// Returns any error encountered during the operation
+// Returns error with context if the operation fails
 func (e *env) DBSimpleSet(bucket, key, val []byte) error {
-	return e.db.Update(func(tx *bolt.Tx) error {
+	err := e.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(bucket)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create bucket %x: %w", bucket, err)
 		}
 		return b.Put(key, val)
 	})
+	if err != nil {
+		return fmt.Errorf("failed to set key %x in bucket %x: %w", key, bucket, err)
+	}
+	return nil
 }
 
 // dbDeleteBucket removes a bucket from the BoltDB key-value store
-// Returns any error encountered during deletion
+// Returns error with context if the deletion fails
 func (e *env) dbDeleteBucket(bucket []byte) error {
-	return e.db.Update(func(tx *bolt.Tx) error {
+	err := e.db.Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket(bucket)
 	})
+	if err != nil {
+		return fmt.Errorf("failed to delete bucket %x: %w", bucket, err)
+	}
+	return nil
 }
 
 // dbSimpleIsBucketEmpty checks if a bucket in BoltDB is empty
@@ -91,7 +107,7 @@ func (e *env) dbSimpleIsBucketEmpty(bucket []byte) bool {
 
 // FirstId retrieves the first record with the given ID and populates the result
 // Translates GORM's ErrRecordNotFound to fs.ErrNotExist for consistent error handling
-// Returns nil on success or any error encountered
+// Returns nil on success or error with context for other failures
 func (e *env) FirstId(res, id any) error {
 	tx := e.sql.First(res, id)
 
@@ -99,17 +115,23 @@ func (e *env) FirstId(res, id any) error {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return fs.ErrNotExist
 		}
-		return tx.Error
+		return fmt.Errorf("failed to find record with ID %v: %w", id, tx.Error)
 	}
 
 	return nil
 }
 
 // FirstWhere retrieves the first record matching the conditions in the where map
-// Returns any error encountered during the operation
+// Returns any error encountered during the operation with added context
 func (e *env) FirstWhere(res any, where map[string]any) error {
 	tx := e.sql.Where(where).First(res)
-	return tx.Error
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return fs.ErrNotExist
+		}
+		return fmt.Errorf("failed to find record with conditions %v: %w", where, tx.Error)
+	}
+	return nil
 }
 
 // Count returns the number of records for a given model type
@@ -122,10 +144,13 @@ func (e *env) Count(obj any) int64 {
 
 // Delete removes a record from the database
 // The object should contain a primary key value to determine what to delete
-// Returns any error encountered during the operation
+// Returns error with context if deletion fails
 func (e *env) Delete(obj any) error {
 	tx := e.sql.Delete(obj)
-	return tx.Error
+	if tx.Error != nil {
+		return fmt.Errorf("failed to delete object of type %T: %w", obj, tx.Error)
+	}
+	return nil
 }
 
 // AutoMigrate creates or updates the database schema based on the struct definition
@@ -136,39 +161,54 @@ func (e *env) AutoMigrate(obj any) {
 
 // DeleteAll removes all records of a specific type
 // Uses a WHERE 1=1 condition to match all records
-// Returns any error encountered during the operation
+// Returns error with context if deletion fails
 func (e *env) DeleteAll(obj any) error {
 	tx := e.sql.Where("1 = 1").Delete(obj)
-	return tx.Error
+	if tx.Error != nil {
+		return fmt.Errorf("failed to delete all records of type %T: %w", obj, tx.Error)
+	}
+	return nil
 }
 
 // DeleteWhere removes records matching the conditions in the where map
-// Returns any error encountered during the operation
+// Returns error with context if deletion fails
 func (e *env) DeleteWhere(obj any, where map[string]any) error {
 	tx := e.sql.Where(where).Delete(obj)
-	return tx.Error
+	if tx.Error != nil {
+		return fmt.Errorf("failed to delete records of type %T with conditions %v: %w", obj, where, tx.Error)
+	}
+	return nil
 }
 
 // Find retrieves all records matching the conditions in the where map
 // Populates the target slice with the results
-// Returns any error encountered during the operation
+// Returns error with context if the query fails
 func (e *env) Find(target any, where map[string]any) error {
 	tx := e.sql.Where(where).Find(target)
-	return tx.Error
+	if tx.Error != nil {
+		return fmt.Errorf("failed to find records with conditions %v: %w", where, tx.Error)
+	}
+	return nil
 }
 
 // First retrieves the first record for a model
 // Populates the target with the result
-// Returns any error encountered during the operation
+// Returns fs.ErrNotExist if no record is found, or error with context for other failures
 func (e *env) First(target any) error {
 	tx := e.sql.First(target)
-	return tx.Error
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return fs.ErrNotExist
+		}
+		return fmt.Errorf("failed to find first record of type %T: %w", target, tx.Error)
+	}
+	return nil
 }
 
 // byPrimaryKey is a generic function to retrieve a record by its primary key
 // Returns a pointer to the record and nil error on success
 // Returns nil and fs.ErrNotExist if the record is not found
-// Returns nil and any other error encountered during the operation
+// Returns nil and error with context for other failures
 func byPrimaryKey[T any](e *env, id any) (*T, error) {
 	var res *T
 	tx := e.sql.First(&res, id)
@@ -177,7 +217,7 @@ func byPrimaryKey[T any](e *env, id any) (*T, error) {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return nil, fs.ErrNotExist
 		}
-		return nil, tx.Error
+		return nil, fmt.Errorf("failed to find record of type %T with ID %v: %w", *new(T), id, tx.Error)
 	}
 
 	return res, nil
@@ -185,12 +225,11 @@ func byPrimaryKey[T any](e *env, id any) (*T, error) {
 
 // Save creates or updates a record in the database
 // Uses OnConflict clause to update all fields if the record already exists
-// Logs an error message if the operation fails but returns nil
-// Note: This appears to have a bug as it doesn't return the error properly
+// Returns any error encountered during the save operation
 func (e *env) Save(v any) error {
 	res := e.sql.Clauses(clause.OnConflict{UpdateAll: true}).Create(v)
 	if res.Error != nil {
-		fmt.Errorf("while saving object of type %T: %w", v, res.Error)
+		return fmt.Errorf("failed to save object of type %T: %w", v, res.Error)
 	}
 	return nil
 }

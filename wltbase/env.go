@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -64,7 +65,7 @@ func (e *env) init() error {
 	if st, err := os.Stat(e.dataDir); err != nil {
 		err = os.MkdirAll(e.dataDir, 0755)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create data directory %s: %w", e.dataDir, err)
 		}
 	} else if !st.IsDir() {
 		return errors.New("dataDir exists but is not a directory")
@@ -73,14 +74,15 @@ func (e *env) init() error {
 	// connect Spot using dynamic (temporary) key
 	e.spot, err = spotlib.New(map[string]string{"project": "libwallet"})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to initialize Spot client: %w", err)
 	}
 	go e.handleStatusEvent(e.spot.Events.On("status"))
 
 	// open bolt db
-	e.db, err = bolt.Open(filepath.Join(e.dataDir, "data.db"), 0600, nil)
+	dbPath := filepath.Join(e.dataDir, "data.db")
+	e.db, err = bolt.Open(dbPath, 0600, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open bolt database at %s: %w", dbPath, err)
 	}
 
 	currentVersion := []byte{0, 0, 0, 3}
@@ -103,9 +105,10 @@ func (e *env) init() error {
 	}
 
 	// open sql database
-	e.sql, err = gorm.Open(sqlite.New(sqlite.Config{DriverName: "sqlite", DSN: filepath.Join(e.dataDir, "sql.db") + "?_pragma=journal_mode(WAL)"}), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true, NoLowerCase: true}})
+	sqlPath := filepath.Join(e.dataDir, "sql.db")
+	e.sql, err = gorm.Open(sqlite.New(sqlite.Config{DriverName: "sqlite", DSN: sqlPath + "?_pragma=journal_mode(WAL)"}), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true, NoLowerCase: true}})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open SQL database at %s: %w", sqlPath, err)
 	}
 
 	// create tables
