@@ -21,6 +21,7 @@ func init() {
 			Create: pobj.Static(apiCreateWallet),
 		},
 	)
+	pobj.RegisterStatic("Wallet:reshare", apiWalletReshare)
 }
 
 func WalletById(e wltintf.Env, id *xuid.XUID) (*Wallet, error) {
@@ -137,6 +138,34 @@ func apiCreateWallet(ctx *apirouter.Context, in struct {
 	}
 
 	return wallet, nil
+}
+
+func apiWalletReshare(ctx *apirouter.Context, in struct {
+	Old []*wltsign.KeyDescription
+	New []*wltsign.KeyDescription
+}) (any, error) {
+	e := wltintf.GetEnv(ctx)
+	if e == nil {
+		return nil, errors.New("failed to get env")
+	}
+
+	w := apirouter.GetObject[Wallet](ctx, "Wallet")
+	if w == nil {
+		return nil, errors.New("Wallet required")
+	}
+
+	var err error
+
+	err = w.Reshare(ctx, in.Old, in.New)
+	if err != nil {
+		return nil, err
+	}
+	err = w.save(e)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 func newWallet(name string) *Wallet {

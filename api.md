@@ -63,6 +63,9 @@ returns an object with the state of the user's onboarding, useful to check if we
     * `update_count` number of items updated from this restore operation
     * `existing_count` number of items that already existed and do not need to be updated
     * `missing_count` number of items missing from the backup
+* `POST Wallet/<id>:reshare` Reshare wallet keys among a new set of key holders
+  * `Old` Array of key descriptions to be replaced `[]*wltsign.KeyDescription`
+  * `New` Array of new key descriptions `[]*wltsign.KeyDescription`
 
 ## Wallet/Key
 
