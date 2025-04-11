@@ -37,6 +37,7 @@ type Wallet struct {
 	Chaincode string       // Base64 encoded chaincode for HD wallet derivation
 	Created   time.Time    `gorm:"autoCreateTime"` // Creation timestamp
 	Modified  time.Time    `gorm:"autoUpdateTime"` // Last modification timestamp
+	delKeys   []*WalletKey `gorm:"-:all"`          // keys to delete
 }
 
 // save persists the wallet and all its keys to the database
@@ -47,6 +48,12 @@ func (w *Wallet) save(e wltintf.Env) error {
 			return fmt.Errorf("failed to save wallet key %d: %w", i, err)
 		}
 	}
+	for _, wk := range w.delKeys {
+		if err := e.Delete(wk); err != nil {
+			log.Printf("failed to delete wallet key: %s", err)
+		}
+	}
+	w.delKeys = nil
 	if err := e.Save(w); err != nil {
 		return fmt.Errorf("failed to save wallet %s: %w", w.Id, err)
 	}
