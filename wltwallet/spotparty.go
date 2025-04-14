@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/KarpelesLab/spotlib"
@@ -20,30 +21,42 @@ type spotParty struct {
 	sid     string
 	peer    string
 	parties map[string]tssPartyUpdateOnly
+	stOnce  sync.Once
+	stErr   error
 }
 
 func (s *spotParty) Start() error {
-	// setup handler
-	s.spot.SetHandler(s.sid, s.messageHandler)
+	s.stOnce.Do(func() {
+		// setup handler
+		s.spot.SetHandler(s.sid, s.messageHandler)
 
-	// locate a live peer
-	peer, err := selectPeer(context.Background(), s.spot)
-	if err != nil {
-		return fmt.Errorf("failed to select peer: %w", err)
-	}
-	s.peer = peer
+		peerCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
 
-	// initalize session
-	buf, err := json.Marshal(s.info)
-	if err != nil {
-		return err
-	}
+		// locate a live peer
+		peer, err := selectPeer(peerCtx, s.spot)
+		if err != nil {
+			s.stErr = fmt.Errorf("failed to select peer: %w", err)
+			return
+		}
+		log.Printf("selected peer: %s", peer)
+		s.peer = peer
 
-	_, err = s.spot.QueryTimeout(15*time.Second, peer+"/walletsign/"+s.sid+"/init", buf)
-	if err != nil {
-		return fmt.Errorf("failed to init remote: %w", err)
-	}
-	return nil
+		// initalize session
+		buf, err := json.Marshal(s.info)
+		if err != nil {
+			s.stErr = err
+			return
+		}
+
+		_, err = s.spot.QueryTimeout(15*time.Second, peer+"/walletsign/"+s.sid+"/init", buf)
+		if err != nil {
+			s.stErr = fmt.Errorf("failed to init remote: %w", err)
+			return
+		}
+		log.Printf("remote initialized, ready for signature")
+	})
+	return s.stErr
 }
 
 func (s *spotParty) UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, error) {

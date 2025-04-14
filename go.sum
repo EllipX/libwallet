@@ -58,6 +58,8 @@ github.com/KarpelesLab/spotlib v0.2.7 h1:zZjeIgs2AqEb9ebPcvWMKuMPih7U/lK4HfhMLG6
 github.com/KarpelesLab/spotlib v0.2.7/go.mod h1:oNuv75RiwlFKfGGhwLZ31bfHVWOngz1jF+5v0Um3MsQ=
 github.com/KarpelesLab/spotlib v0.2.15 h1:wiYgfuFibA+KDS6knbPYl6Bt2cGfedRZ6WZhUSf7GbQ=
 github.com/KarpelesLab/spotlib v0.2.15/go.mod h1:zhwPIUpdyGAL/WXBDr+QXQJvyvBHwZEX2OAyRVvYQFk=
+github.com/KarpelesLab/spotlib v0.2.18 h1:QigvUo6eggaX72SQoZyibI8JRKyPEFv0BLfEJ05D7qo=
+github.com/KarpelesLab/spotlib v0.2.18/go.mod h1:zhwPIUpdyGAL/WXBDr+QXQJvyvBHwZEX2OAyRVvYQFk=
 github.com/KarpelesLab/spotproto v0.2.0 h1:2ZswrQ0yf/PmTdHc5gzZiiB+0A/ErGv+vsJ5lfufBYo=
 github.com/KarpelesLab/spotproto v0.2.0/go.mod h1:y4NmEkiK2i+INDka6rtc2C15khAGQRMRAqaW9oCJrE0=
 github.com/KarpelesLab/typutil v0.2.26 h1:SPSYb8ntPZ+zlSxiU9SNAjRTglHiQRX6hQ38Kcq/m/0=

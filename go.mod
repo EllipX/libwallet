@@ -11,7 +11,8 @@ require (
 	github.com/KarpelesLab/pjson v0.1.9
 	github.com/KarpelesLab/pobj v0.2.0
 	github.com/KarpelesLab/rest v0.5.23
-	github.com/KarpelesLab/spotlib v0.2.15
+	github.com/KarpelesLab/spotlib v0.2.18
+	github.com/KarpelesLab/spotproto v0.2.0
 	github.com/KarpelesLab/typutil v0.2.29
 	github.com/KarpelesLab/xuid v0.1.8
 	github.com/ModChain/base58 v1.0.3
@@ -36,7 +37,6 @@ require (
 	github.com/KarpelesLab/lngdb v1.0.0 // indirect
 	github.com/KarpelesLab/putil v1.0.0 // indirect
 	github.com/KarpelesLab/ringslice v0.1.1 // indirect
-	github.com/KarpelesLab/spotproto v0.2.0 // indirect
 	github.com/KarpelesLab/webutil v0.2.2 // indirect
 	github.com/ModChain/bech32m v0.1.4 // indirect
 	github.com/ModChain/edwards25519 v1.0.1 // indirect

@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/EllipX/libwallet/wltintf"
 	"github.com/EllipX/libwallet/wltsign"
@@ -142,8 +143,11 @@ func (w *Wallet) Reshare(ctx context.Context, oldKeys []*wltsign.KeyDescription,
 					return err
 				}
 			}
-			//log.Printf("initializing remote peer %s with info=%+v", p.Id.String(), info)
-			//log.Printf("remote sid = %s", kd.Key)
+			if err := waitOnlineSpot(spot); err != nil {
+				return err
+			}
+			log.Printf("initializing remote peer %s with info=%+v", p.Id.String(), info)
+			log.Printf("remote sid = %s", kd.Key)
 			m[p.Id.String()] = &spotParty{info: info, spot: spot, sid: kd.Key, parties: m}
 			// setup is done, skip the normal decrypt
 			continue
@@ -184,8 +188,10 @@ func (w *Wallet) Reshare(ctx context.Context, oldKeys []*wltsign.KeyDescription,
 
 	wgStart.Wait()
 
-	if err := <-errCh; err != nil {
+	select {
+	case err := <-errCh:
 		return err
+	default:
 	}
 
 	// only route messages after everyone has started
@@ -209,5 +215,16 @@ func (w *Wallet) Reshare(ctx context.Context, oldKeys []*wltsign.KeyDescription,
 		}
 	}
 
+	return nil
+}
+
+func waitOnlineSpot(spot *spotlib.Client) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	err := spot.WaitOnline(ctx)
+	if err != nil {
+		return err
+	}
+	time.Sleep(500 * time.Millisecond)
 	return nil
 }

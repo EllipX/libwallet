@@ -2,12 +2,20 @@ package libwallet
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 
 	"github.com/EllipX/libwallet/wltbase"
 	"github.com/KarpelesLab/apirouter"
 )
 
 // Methods exposed to the application to setup an environment
+
+// ShowDebug enables outputting debug output on the standard error output
+func ShowDebug() {
+	// set the default logger to one which has level set to debug
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})))
+}
 
 // MakeRPC generates and return a socket
 func MakeRPC(dataDir string) (int, error) {

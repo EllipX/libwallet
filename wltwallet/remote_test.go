@@ -3,12 +3,18 @@ package wltwallet
 import (
 	"context"
 	"log"
+	"log/slog"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/EllipX/libwallet/wltsign"
 	"github.com/KarpelesLab/xuid"
 )
+
+func init() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})))
+}
 
 func TestRemoteWallet(t *testing.T) {
 	// generate a new remote id
