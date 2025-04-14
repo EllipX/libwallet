@@ -79,7 +79,7 @@ func GetAllWallets(e wltintf.Env, ctx *apirouter.Context) ([]*Wallet, error) {
 			return nil, err
 		}
 		if len(v.Keys) == 0 {
-			return nil, fmt.Errorf("failed to load keys for wallet %s", v.Id)
+			return nil, fmt.Errorf("failed to load keys for wallet %s (gen %d)", v.Id, v.Gen)
 		}
 	}
 	return res, nil
