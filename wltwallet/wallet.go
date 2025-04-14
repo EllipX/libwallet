@@ -32,7 +32,7 @@ type Wallet struct {
 	Name      string       // User-friendly name
 	Curve     string       // Elliptic curve used (e.g., "secp256k1")
 	Threshold int          // Minimum number of keys required for signing
-	Keys      []*WalletKey `gorm:"-:all"`    // Associated keys (not stored in database)
+	Keys      []*WalletKey `gorm:"-:all"`              // Associated keys (not stored in database)
 	Gen       uint64       `gorm:"not null;default:0"` // incremented on reshare
 	Pubkey    string       // Base64 encoded public key
 	Chaincode string       // Base64 encoded chaincode for HD wallet derivation

@@ -162,14 +162,30 @@ func (w *Wallet) Reshare(ctx context.Context, oldKeys []*wltsign.KeyDescription,
 		}(p)
 	}
 
+	errCh := make(chan error, 2)
+	var wgStart sync.WaitGroup
+	wgStart.Add(len(m))
+
 	// start all
 	for _, p := range m {
 		go func(party tssPartyUpdateOnly) {
+			defer wgStart.Done()
+
 			err := party.Start()
 			if err != nil {
 				log.Printf("failed to start tss party: %s", err)
+				select {
+				case errCh <- err:
+				default:
+				}
 			}
 		}(p)
+	}
+
+	wgStart.Wait()
+
+	if err := <-errCh; err != nil {
+		return err
 	}
 
 	// only route messages after everyone has started
