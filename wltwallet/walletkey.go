@@ -29,7 +29,7 @@ type WalletKey struct {
 	Type   string
 	Key    string `json:"Key,omitempty"` // (public) key used for encryption
 	Data   []byte `json:",protect"`
-	Gen    uint64 // key generation
+	Gen    uint64 `gorm:"not null"` // key generation
 	pre    *keygen.LocalPreParams
 	sdata  *keygen.LocalPartySaveData
 }
