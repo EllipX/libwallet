@@ -50,7 +50,7 @@ func (w *Wallet) save(e wltintf.Env) error {
 
 	for i, wk := range w.Keys {
 		if wk.Gen != gen {
-			return fmt.Errorf("wallet: inconsistant walley key generation: key[0].gen=%d but key[%d].gen=%d", gen, i, wk.Gen)
+			return fmt.Errorf("wallet: inconsistent walley key generation: key[0].gen=%d but key[%d].gen=%d", gen, i, wk.Gen)
 		}
 	}
 
