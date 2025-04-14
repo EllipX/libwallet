@@ -127,13 +127,7 @@ func apiCreateWallet(ctx *apirouter.Context, in struct {
 		return nil, err
 	}
 
-	for _, wk := range wallet.Keys {
-		if err := e.Save(wk); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := e.Save(wallet); err != nil {
+	if err := wallet.save(e); err != nil {
 		return nil, err
 	}
 
