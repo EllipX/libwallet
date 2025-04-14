@@ -35,7 +35,7 @@ func WalletById(e wltintf.Env, id *xuid.XUID) (*Wallet, error) {
 	}
 
 	// load res.Keys
-	err = e.Find(&res.Keys, map[string]any{"Wallet": res.Id.String()})
+	err = e.Find(&res.Keys, map[string]any{"Wallet": res.Id.String(), "Gen": res.Gen})
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func GetAllWallets(e wltintf.Env, ctx *apirouter.Context) ([]*Wallet, error) {
 
 	for _, v := range res {
 		// load keys
-		err = e.Find(&v.Keys, map[string]any{"Wallet": v.Id})
+		err = e.Find(&v.Keys, map[string]any{"Wallet": v.Id, "Gen": v.Gen})
 		if err != nil {
 			return nil, err
 		}

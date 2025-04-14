@@ -29,6 +29,7 @@ type WalletKey struct {
 	Type   string
 	Key    string `json:"Key,omitempty"` // (public) key used for encryption
 	Data   []byte `json:",protect"`
+	Gen    uint64 // key generation
 	pre    *keygen.LocalPreParams
 	sdata  *keygen.LocalPartySaveData
 }
@@ -47,6 +48,7 @@ func (w *Wallet) createWalletKey(ctx context.Context, typ string) (*WalletKey, e
 		Id:     xuid.New("wkey"),
 		Wallet: w.Id,
 		Type:   typ,
+		Gen:    w.Gen + 1, // always use base gen +1, wallet gen will be updated on save
 		pre:    preParams,
 	}
 	return final, nil

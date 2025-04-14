@@ -33,27 +33,35 @@ type Wallet struct {
 	Curve     string       // Elliptic curve used (e.g., "secp256k1")
 	Threshold int          // Minimum number of keys required for signing
 	Keys      []*WalletKey `gorm:"-:all"` // Associated keys (not stored in database)
+	Gen       uint64       // incremented on reshare
 	Pubkey    string       // Base64 encoded public key
 	Chaincode string       // Base64 encoded chaincode for HD wallet derivation
 	Created   time.Time    `gorm:"autoCreateTime"` // Creation timestamp
 	Modified  time.Time    `gorm:"autoUpdateTime"` // Last modification timestamp
-	delKeys   []*WalletKey `gorm:"-:all"`          // keys to delete
 }
 
 // save persists the wallet and all its keys to the database
 // Returns error with context if the save operation fails
 func (w *Wallet) save(e wltintf.Env) error {
+	if len(w.Keys) == 0 {
+		return errors.New("wallet: cannot save a wallet with no keys")
+	}
+	gen := w.Keys[0].Gen
+
+	for i, wk := range w.Keys {
+		if wk.Gen != gen {
+			return fmt.Errorf("wallet: inconsistant walley key generation: key[0].gen=%d but key[%d].gen=%d", gen, i, wk.Gen)
+		}
+	}
+
+	// update w.Gen to make sure we load those keys in the future
+	w.Gen = gen
+
 	for i, wk := range w.Keys {
 		if err := wk.save(e); err != nil {
 			return fmt.Errorf("failed to save wallet key %d: %w", i, err)
 		}
 	}
-	for _, wk := range w.delKeys {
-		if err := e.Delete(wk); err != nil {
-			log.Printf("failed to delete wallet key: %s", err)
-		}
-	}
-	w.delKeys = nil
 	if err := e.Save(w); err != nil {
 		return fmt.Errorf("failed to save wallet %s: %w", w.Id, err)
 	}

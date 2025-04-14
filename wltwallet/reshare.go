@@ -192,15 +192,6 @@ func (w *Wallet) Reshare(ctx context.Context, oldKeys []*wltsign.KeyDescription,
 			return err
 		}
 	}
-	// delete old keys
-	for _, kd := range oldKeys {
-		p := w.getKey(kd.Id)
-		if p == nil {
-			log.Printf("could not find key id=%s", kd.Id)
-			continue
-		}
-		w.delKeys = append(w.delKeys, p)
-	}
 
 	return nil
 }
