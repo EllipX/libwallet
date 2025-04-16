@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"git.atonline.com/ellipx/libwallet/wltintf"
+	"github.com/EllipX/libwallet/wltintf"
 	"github.com/KarpelesLab/apirouter"
 	"github.com/KarpelesLab/pobj"
 	"github.com/KarpelesLab/xuid"

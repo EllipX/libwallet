@@ -1,7 +1,7 @@
 package wlttest
 
 import (
-	"git.atonline.com/ellipx/libwallet/wltnet"
+	"github.com/EllipX/libwallet/wltnet"
 	"testing"
 )
 
