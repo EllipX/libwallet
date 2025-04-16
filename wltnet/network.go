@@ -116,17 +116,50 @@ func (n *Network) check() error {
 			if n.Name == "" {
 				n.Name = "Bitcoin"
 			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "BTC"
+			}
 		case "bitcoin-cash":
 			if n.Name == "" {
 				n.Name = "Bitcoin Cash"
+			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "BCH"
 			}
 		case "litecoin":
 			if n.Name == "" {
 				n.Name = "Litecoin"
 			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "LTC"
+			}
 		case "dogecoin":
 			if n.Name == "" {
 				n.Name = "Dogecoin"
+			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "DOGE"
+			}
+		case "monacoin":
+			if n.Name == "" {
+				n.Name = "Monacoin"
+			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "MONA"
+			}
+		case "namecoin":
+			if n.Name == "" {
+				n.Name = "Namecoin"
+			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "NMC"
+			}
+		case "electraproto":
+			if n.Name == "" {
+				n.Name = "Electra Protocol"
+			}
+			if n.CurrencySymbol == "" {
+				n.CurrencySymbol = "XEP"
 			}
 		default:
 			return fmt.Errorf("invalid network type %s/%s", n.Type, n.ChainId)
